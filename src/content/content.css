@@ -1,0 +1,2 @@
+/* Content script styles are injected into the host page.
+   All component styles live inside the Shadow DOM to avoid conflicts. */
