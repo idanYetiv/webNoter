@@ -9,7 +9,6 @@
     "128": "public/icon-128.png"
   },
   "action": {
-    "default_popup": "src/popup/popup.html",
     "default_icon": {
       "16": "public/icon-16.png",
       "48": "public/icon-48.png"
@@ -22,8 +21,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["src/content/content.tsx"],
-      "css": ["src/content/content.css"]
+      "js": ["src/content/content.tsx"]
     }
   ],
   "permissions": ["storage", "activeTab", "contextMenus"],

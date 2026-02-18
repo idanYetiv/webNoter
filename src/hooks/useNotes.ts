@@ -1,6 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
-import type { Note, NoteColor } from "../lib/types";
-import { getNotes, saveNote, deleteNote, updateNote } from "../lib/storage";
+import type { Note, NoteColor, NoteScope } from "../lib/types";
+import {
+  getNotesForUrl,
+  saveNote,
+  deleteNote,
+  updateNote,
+  changeNoteScope,
+} from "../lib/storage";
 
 export function useNotes(url: string) {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -8,7 +14,7 @@ export function useNotes(url: string) {
 
   const loadNotes = useCallback(async () => {
     setLoading(true);
-    const loaded = await getNotes(url);
+    const loaded = await getNotesForUrl(url);
     setNotes(loaded);
     setLoading(false);
   }, [url]);
@@ -17,52 +23,62 @@ export function useNotes(url: string) {
     loadNotes();
   }, [loadNotes]);
 
-  const addNote = useCallback(async () => {
-    const note: Note = {
-      id: crypto.randomUUID(),
-      url,
-      text: "",
-      color: "yellow",
-      position: { x: 100 + Math.random() * 200, y: 100 + Math.random() * 200 },
-      size: { w: 240, h: 200 },
-      minimized: false,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-    await saveNote(note);
-    setNotes((prev) => [...prev, note]);
-    return note;
-  }, [url]);
-
-  const removeNote = useCallback(
-    async (noteId: string) => {
-      await deleteNote(url, noteId);
-      setNotes((prev) => prev.filter((n) => n.id !== noteId));
+  const addNote = useCallback(
+    async (scope: NoteScope = "page") => {
+      const note: Note = {
+        id: crypto.randomUUID(),
+        url,
+        scope,
+        text: "",
+        color: "yellow",
+        position: {
+          x: 100 + Math.random() * 200,
+          y: 100 + Math.random() * 200,
+        },
+        size: { w: 240, h: 200 },
+        minimized: false,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      await saveNote(note);
+      setNotes((prev) => [...prev, note]);
+      return note;
     },
     [url]
   );
+
+  const removeNote = useCallback(async (note: Note) => {
+    await deleteNote(note);
+    setNotes((prev) => prev.filter((n) => n.id !== note.id));
+  }, []);
 
   const editNote = useCallback(
     async (
-      noteId: string,
+      note: Note,
       updates: Partial<Omit<Note, "id" | "url" | "createdAt">>
     ) => {
-      await updateNote(url, noteId, updates);
+      await updateNote(note, updates);
       setNotes((prev) =>
         prev.map((n) =>
-          n.id === noteId ? { ...n, ...updates, updatedAt: Date.now() } : n
+          n.id === note.id ? { ...n, ...updates, updatedAt: Date.now() } : n
         )
       );
     },
-    [url]
+    []
   );
 
+  const toggleScope = useCallback(async (note: Note) => {
+    const newScope: NoteScope = note.scope === "page" ? "site" : "page";
+    const updated = await changeNoteScope(note, newScope);
+    setNotes((prev) => prev.map((n) => (n.id === note.id ? updated : n)));
+  }, []);
+
   const changeColor = useCallback(
-    async (noteId: string, color: NoteColor) => {
-      await editNote(noteId, { color });
+    async (note: Note, color: NoteColor) => {
+      await editNote(note, { color });
     },
     [editNote]
   );
 
-  return { notes, loading, addNote, removeNote, editNote, changeColor };
+  return { notes, loading, addNote, removeNote, editNote, toggleScope, changeColor };
 }

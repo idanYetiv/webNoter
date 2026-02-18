@@ -2,24 +2,33 @@ import { createRoot } from "react-dom/client";
 import ContentApp from "./ContentApp";
 
 function init() {
-  // Create a shadow DOM host to isolate our styles
-  const host = document.createElement("div");
-  host.id = "webnoter-root";
-  host.style.all = "initial";
-  document.body.appendChild(host);
+  if (document.getElementById("webnoter-root")) return;
 
-  const shadow = host.attachShadow({ mode: "open" });
-
-  // Create a container inside shadow DOM
   const container = document.createElement("div");
-  container.id = "webnoter-container";
-  shadow.appendChild(container);
+  container.id = "webnoter-root";
+  // Reset inherited styles but keep it positioned for fixed children
+  container.style.cssText =
+    "all:initial; position:fixed; top:0; left:0; width:0; height:0; z-index:2147483647; pointer-events:none;";
+  document.body.appendChild(container);
 
-  const root = createRoot(container);
+  // Inner wrapper that re-enables pointer events on actual UI
+  const inner = document.createElement("div");
+  inner.id = "webnoter-container";
+  inner.style.pointerEvents = "auto";
+  container.appendChild(inner);
+
+  const root = createRoot(inner);
   root.render(<ContentApp />);
 }
 
-// Wait for DOM to be ready
+export function onExecute() {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+}
+
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init);
 } else {

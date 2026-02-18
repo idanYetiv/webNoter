@@ -7,15 +7,21 @@ import ScreenshotButton from "./ScreenshotButton";
 interface StickyNoteProps {
   note: Note;
   onUpdate: (
-    noteId: string,
+    note: Note,
     updates: Partial<Omit<Note, "id" | "url" | "createdAt">>
   ) => void;
-  onDelete: (noteId: string) => void;
+  onDelete: (note: Note) => void;
+  onToggleScope: (note: Note) => void;
 }
 
 const COLOR_OPTIONS: NoteColor[] = ["yellow", "pink", "blue", "green", "purple"];
 
-export default function StickyNote({ note, onUpdate, onDelete }: StickyNoteProps) {
+export default function StickyNote({
+  note,
+  onUpdate,
+  onDelete,
+  onToggleScope,
+}: StickyNoteProps) {
   const [dragging, setDragging] = useState(false);
   const [resizing, setResizing] = useState(false);
   const [showColors, setShowColors] = useState(false);
@@ -33,7 +39,7 @@ export default function StickyNote({ note, onUpdate, onDelete }: StickyNoteProps
       };
 
       const handleMouseMove = (ev: MouseEvent) => {
-        onUpdate(note.id, {
+        onUpdate(note, {
           position: {
             x: ev.clientX - dragOffset.current.x,
             y: ev.clientY - dragOffset.current.y,
@@ -50,7 +56,7 @@ export default function StickyNote({ note, onUpdate, onDelete }: StickyNoteProps
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
     },
-    [note.id, note.position, onUpdate]
+    [note, onUpdate]
   );
 
   const handleResize = useCallback(
@@ -64,7 +70,7 @@ export default function StickyNote({ note, onUpdate, onDelete }: StickyNoteProps
       const startH = note.size.h;
 
       const handleMouseMove = (ev: MouseEvent) => {
-        onUpdate(note.id, {
+        onUpdate(note, {
           size: {
             w: Math.max(180, startW + ev.clientX - startX),
             h: Math.max(120, startH + ev.clientY - startY),
@@ -81,10 +87,11 @@ export default function StickyNote({ note, onUpdate, onDelete }: StickyNoteProps
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
     },
-    [note.id, note.size, onUpdate]
+    [note, onUpdate]
   );
 
   const bgColor = NOTE_COLORS[note.color];
+  const isSiteScope = note.scope === "site";
 
   return (
     <div
@@ -94,11 +101,13 @@ export default function StickyNote({ note, onUpdate, onDelete }: StickyNoteProps
         position: "fixed",
         left: note.position.x,
         top: note.position.y,
-        width: note.minimized ? 180 : note.size.w,
+        width: note.minimized ? 200 : note.size.w,
         height: note.minimized ? 32 : note.size.h,
         backgroundColor: bgColor,
         borderRadius: "8px",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+        boxShadow: isSiteScope
+          ? "0 4px 12px rgba(59,130,246,0.3)"
+          : "0 4px 12px rgba(0,0,0,0.15)",
         cursor: dragging ? "grabbing" : "grab",
         zIndex: 2147483646,
         display: "flex",
@@ -117,42 +126,87 @@ export default function StickyNote({ note, onUpdate, onDelete }: StickyNoteProps
           justifyContent: "space-between",
           padding: "4px 8px",
           fontSize: "12px",
-          borderBottom: note.minimized ? "none" : "1px solid rgba(0,0,0,0.1)",
+          borderBottom: note.minimized
+            ? "none"
+            : "1px solid rgba(0,0,0,0.1)",
           minHeight: "24px",
         }}
       >
         <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
           <button
             data-no-drag
-            onClick={() => onUpdate(note.id, { minimized: !note.minimized })}
-            style={{ background: "none", border: "none", cursor: "pointer", fontSize: "12px", padding: "0 2px" }}
+            onClick={() => onUpdate(note, { minimized: !note.minimized })}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "12px",
+              padding: "0 2px",
+            }}
             title={note.minimized ? "Expand" : "Minimize"}
           >
             {note.minimized ? "\u25B6" : "\u25BC"}
           </button>
+
+          {/* Scope toggle */}
+          <button
+            data-no-drag
+            onClick={() => onToggleScope(note)}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "12px",
+              padding: "0 2px",
+              opacity: isSiteScope ? 1 : 0.4,
+            }}
+            title={
+              isSiteScope
+                ? "Website-level note (visible on all pages of this site) — click to make page-level"
+                : "Page-level note (only this URL) — click to make website-level"
+            }
+          >
+            {"\u{1F310}"}
+          </button>
+
           {!note.minimized && (
             <>
               <button
                 data-no-drag
                 onClick={() => setShowColors(!showColors)}
-                style={{ background: "none", border: "none", cursor: "pointer", fontSize: "12px", padding: "0 2px" }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                  padding: "0 2px",
+                }}
                 title="Change color"
               >
                 {"\u{1F3A8}"}
               </button>
               <ScreenshotButton
-                onCapture={(dataUrl) => onUpdate(note.id, { screenshot: dataUrl })}
+                onCapture={(dataUrl) =>
+                  onUpdate(note, { screenshot: dataUrl })
+                }
               />
             </>
           )}
         </div>
         <button
           data-no-drag
-          onClick={() => onDelete(note.id)}
-          style={{ background: "none", border: "none", cursor: "pointer", fontSize: "14px", padding: "0 2px", color: "#666" }}
+          onClick={() => onDelete(note)}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            fontSize: "14px",
+            padding: "0 2px",
+            color: "#666",
+          }}
           title="Delete note"
         >
-          \u2715
+          {"\u2715"}
         </button>
       </div>
 
@@ -171,7 +225,7 @@ export default function StickyNote({ note, onUpdate, onDelete }: StickyNoteProps
             <button
               key={c}
               onClick={() => {
-                onUpdate(note.id, { color: c });
+                onUpdate(note, { color: c });
                 setShowColors(false);
               }}
               style={{
@@ -179,7 +233,10 @@ export default function StickyNote({ note, onUpdate, onDelete }: StickyNoteProps
                 height: "20px",
                 borderRadius: "50%",
                 backgroundColor: NOTE_COLORS[c],
-                border: c === note.color ? "2px solid #333" : "1px solid rgba(0,0,0,0.2)",
+                border:
+                  c === note.color
+                    ? "2px solid #333"
+                    : "1px solid rgba(0,0,0,0.2)",
                 cursor: "pointer",
                 padding: 0,
               }}
@@ -195,7 +252,7 @@ export default function StickyNote({ note, onUpdate, onDelete }: StickyNoteProps
           <div data-no-drag style={{ flex: 1, overflow: "auto" }}>
             <NoteEditor
               text={note.text}
-              onChange={(text) => onUpdate(note.id, { text })}
+              onChange={(text) => onUpdate(note, { text })}
             />
           </div>
 
@@ -211,7 +268,11 @@ export default function StickyNote({ note, onUpdate, onDelete }: StickyNoteProps
               <img
                 src={note.screenshot}
                 alt="Screenshot"
-                style={{ width: "100%", borderRadius: "4px", display: "block" }}
+                style={{
+                  width: "100%",
+                  borderRadius: "4px",
+                  display: "block",
+                }}
               />
             </div>
           )}
@@ -234,7 +295,7 @@ export default function StickyNote({ note, onUpdate, onDelete }: StickyNoteProps
               color: "rgba(0,0,0,0.3)",
             }}
           >
-            \u25E2
+            {"\u25E2"}
           </div>
         </>
       )}

@@ -1,10 +1,9 @@
-import { getAllNotes } from "../lib/storage";
+import { getNoteCountForUrl } from "../lib/storage";
 import type { MessageAction } from "../lib/types";
 
-// Update badge count for a tab
+// Update badge count for a tab (page + site notes combined)
 async function updateBadge(tabId: number, url: string) {
-  const allNotes = await getAllNotes();
-  const count = allNotes[url]?.length ?? 0;
+  const count = await getNoteCountForUrl(url);
   chrome.action.setBadgeText({ text: count > 0 ? String(count) : "", tabId });
   chrome.action.setBadgeBackgroundColor({ color: "#f59e0b", tabId });
 }
@@ -29,15 +28,16 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 });
 
 // Message handling
-chrome.runtime.onMessage.addListener((message: MessageAction, _sender, sendResponse) => {
-  if (message.type === "GET_NOTE_COUNT") {
-    getAllNotes().then((allNotes) => {
-      const count = allNotes[message.url]?.length ?? 0;
-      sendResponse({ type: "NOTE_COUNT", count });
-    });
-    return true; // async response
+chrome.runtime.onMessage.addListener(
+  (message: MessageAction, _sender, sendResponse) => {
+    if (message.type === "GET_NOTE_COUNT") {
+      getNoteCountForUrl(message.url).then((count) => {
+        sendResponse({ type: "NOTE_COUNT", count });
+      });
+      return true; // async response
+    }
   }
-});
+);
 
 // Update badge when tab becomes active
 chrome.tabs.onActivated?.addListener(async (activeInfo) => {

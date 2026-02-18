@@ -18,9 +18,12 @@ export const NOTE_COLORS: Record<NoteColor, string> = {
   purple: "#c4b5fd",
 };
 
+export type NoteScope = "page" | "site";
+
 export interface Note {
   id: string;
   url: string;
+  scope: NoteScope;
   text: string;
   color: NoteColor;
   position: NotePosition;
@@ -31,8 +34,14 @@ export interface Note {
   updatedAt: number;
 }
 
-export interface SiteNotes {
-  [url: string]: Note[];
+export interface Alert {
+  id: string;
+  url: string;
+  scope: NoteScope;
+  message: string;
+  enabled: boolean;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export type MessageAction =

@@ -5,32 +5,28 @@ import { NOTE_COLORS } from "../lib/types";
 
 interface SiteGroup {
   domain: string;
-  urls: { url: string; notes: Note[] }[];
-  totalCount: number;
+  notes: Note[];
 }
 
 function groupByDomain(allNotes: Record<string, Note[]>): SiteGroup[] {
-  const domainMap = new Map<string, { url: string; notes: Note[] }[]>();
+  const domainMap = new Map<string, Note[]>();
 
-  for (const [url, notes] of Object.entries(allNotes)) {
-    if (notes.length === 0) continue;
-    let domain: string;
-    try {
-      domain = new URL(url).hostname;
-    } catch {
-      domain = url;
+  for (const notes of Object.values(allNotes)) {
+    for (const note of notes) {
+      let domain: string;
+      try {
+        domain = new URL(note.url).hostname;
+      } catch {
+        domain = note.url;
+      }
+      if (!domainMap.has(domain)) domainMap.set(domain, []);
+      domainMap.get(domain)!.push(note);
     }
-    if (!domainMap.has(domain)) domainMap.set(domain, []);
-    domainMap.get(domain)!.push({ url, notes });
   }
 
   return Array.from(domainMap.entries())
-    .map(([domain, urls]) => ({
-      domain,
-      urls,
-      totalCount: urls.reduce((sum, u) => sum + u.notes.length, 0),
-    }))
-    .sort((a, b) => b.totalCount - a.totalCount);
+    .map(([domain, notes]) => ({ domain, notes }))
+    .sort((a, b) => b.notes.length - a.notes.length);
 }
 
 export default function Popup() {
@@ -55,19 +51,22 @@ export default function Popup() {
     });
   }
 
-  async function handleDeleteNote(url: string, noteId: string) {
-    await deleteNote(url, noteId);
+  async function handleDeleteNote(note: Note) {
+    await deleteNote(note);
     await loadNotes();
   }
 
   async function handleAddNote() {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
     if (tab?.id) {
       chrome.tabs.sendMessage(tab.id, { type: "ADD_NOTE", url: tab.url });
     }
   }
 
-  const totalNotes = groups.reduce((sum, g) => sum + g.totalCount, 0);
+  const totalNotes = groups.reduce((sum, g) => sum + g.notes.length, 0);
 
   return (
     <div className="flex flex-col h-full bg-amber-50 text-gray-800">
@@ -115,35 +114,43 @@ export default function Popup() {
                   </span>
                 </div>
                 <span className="text-xs bg-amber-100 px-2 py-0.5 rounded-full flex-shrink-0">
-                  {group.totalCount}
+                  {group.notes.length}
                 </span>
               </button>
 
               {expanded.has(group.domain) && (
                 <div className="ml-4 mt-1 space-y-1">
-                  {group.urls.map(({ url, notes }) =>
-                    notes.map((note) => (
+                  {group.notes.map((note) => (
+                    <div
+                      key={note.id}
+                      className="flex items-center gap-2 p-2 bg-white rounded shadow-sm text-xs"
+                    >
                       <div
-                        key={note.id}
-                        className="flex items-center gap-2 p-2 bg-white rounded shadow-sm text-xs"
+                        className="w-3 h-3 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: NOTE_COLORS[note.color] }}
+                      />
+                      <span
+                        className="flex-shrink-0"
+                        title={
+                          note.scope === "site"
+                            ? "Website-level note"
+                            : "Page-level note"
+                        }
                       >
-                        <div
-                          className="w-3 h-3 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: NOTE_COLORS[note.color] }}
-                        />
-                        <span className="flex-1 truncate">
-                          {note.text || "(empty note)"}
-                        </span>
-                        <button
-                          onClick={() => handleDeleteNote(url, note.id)}
-                          className="text-gray-400 hover:text-red-500 flex-shrink-0 cursor-pointer"
-                          title="Delete note"
-                        >
-                          \u2715
-                        </button>
-                      </div>
-                    ))
-                  )}
+                        {note.scope === "site" ? "\u{1F310}" : "\u{1F4C4}"}
+                      </span>
+                      <span className="flex-1 truncate">
+                        {note.text || "(empty note)"}
+                      </span>
+                      <button
+                        onClick={() => handleDeleteNote(note)}
+                        className="text-gray-400 hover:text-red-500 flex-shrink-0 cursor-pointer"
+                        title="Delete note"
+                      >
+                        {"\u2715"}
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
