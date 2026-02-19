@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import type { Alert, Note, NoteColor, NoteScope } from "../../lib/types";
 import { NOTE_COLORS } from "../../lib/types";
 import { useScreenshot } from "../../hooks/useScreenshot";
@@ -21,6 +21,7 @@ interface FloatingPanelProps {
     updates: Partial<Omit<Alert, "id" | "url" | "createdAt">>
   ) => void;
   onToggleAlert: (alert: Alert) => void;
+  forceShow?: number;
 }
 
 /** Returns true if URL is a root/main page of the domain (no meaningful path). */
@@ -116,8 +117,17 @@ export default function FloatingPanel({
   onDeleteAlert,
   onEditAlert,
   onToggleAlert,
+  forceShow,
 }: FloatingPanelProps) {
   const [open, setOpen] = useState(false);
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    if (forceShow) {
+      setHidden(false);
+      setOpen(true);
+    }
+  }, [forceShow]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingAlertId, setEditingAlertId] = useState<string | null>(null);
   const [colorPickerId, setColorPickerId] = useState<string | null>(null);
@@ -143,50 +153,89 @@ export default function FloatingPanel({
     setEditingAlertId(alert.id);
   };
 
+  // --- Hidden — nothing rendered, reopen via extension icon ---
+  if (hidden) return null;
+
   // --- Minimized circle ---
   if (!open) {
     return (
       <div
         ref={panelRef}
         onMouseDown={onMouseDown}
-        onClick={() => {
-          if (!wasDragged()) setOpen(true);
-        }}
         style={{
           position: "fixed",
           left: window.innerWidth - 76,
           top: window.innerHeight - 76,
-          width: "52px",
-          height: "52px",
-          borderRadius: "50%",
-          backgroundColor: "#fbbf24",
-          border: "3px solid #f59e0b",
-          boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
-          cursor: "grab",
-          fontSize: "22px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
           zIndex: 2147483647,
           fontFamily: "system-ui, -apple-system, sans-serif",
-          color: "#78350f",
-          fontWeight: "bold",
-          lineHeight: 1,
-          userSelect: "none",
           direction: "ltr",
           textAlign: "left" as const,
         }}
-        title="Open webNoter"
       >
-        {notes.length > 0 ? (
-          <span style={{ fontSize: "13px", pointerEvents: "none" }}>
-            {notes.length}
-          </span>
-        ) : (
-          <span style={{ fontSize: "20px", pointerEvents: "none" }}>
-            {"\u{1F4DD}"}
-          </span>
-        )}
+        {/* Main circle button */}
+        <div
+          onClick={() => {
+            if (!wasDragged()) setOpen(true);
+          }}
+          style={{
+            width: "52px",
+            height: "52px",
+            borderRadius: "50%",
+            backgroundColor: "#fbbf24",
+            border: "3px solid #f59e0b",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
+            cursor: "grab",
+            fontSize: "22px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#78350f",
+            fontWeight: "bold",
+            lineHeight: 1,
+            userSelect: "none",
+          }}
+          title="Open webNoter"
+        >
+          {notes.length > 0 ? (
+            <span style={{ fontSize: "13px", pointerEvents: "none" }}>
+              {notes.length}
+            </span>
+          ) : (
+            <span style={{ fontSize: "20px", pointerEvents: "none" }}>
+              {"\u{1F4DD}"}
+            </span>
+          )}
+        </div>
+        {/* Close (X) button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setHidden(true);
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          style={{
+            position: "absolute",
+            top: "-4px",
+            right: "-4px",
+            width: "20px",
+            height: "20px",
+            borderRadius: "50%",
+            backgroundColor: "#f59e0b",
+            border: "2px solid #d97706",
+            cursor: "pointer",
+            fontSize: "10px",
+            fontWeight: "bold",
+            color: "#78350f",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 0,
+            lineHeight: 1,
+          }}
+          title="Hide webNoter"
+        >
+          {"\u2715"}
+        </button>
       </div>
     );
   }

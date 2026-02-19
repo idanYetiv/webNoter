@@ -39,6 +39,13 @@ chrome.runtime.onMessage.addListener(
   }
 );
 
+// Extension icon click — toggle panel in content script
+chrome.action.onClicked.addListener((tab) => {
+  if (tab.id) {
+    chrome.tabs.sendMessage(tab.id, { type: "TOGGLE_PANEL" });
+  }
+});
+
 // Update badge when tab becomes active
 chrome.tabs.onActivated?.addListener(async (activeInfo) => {
   const tab = await chrome.tabs.get(activeInfo.tabId);
