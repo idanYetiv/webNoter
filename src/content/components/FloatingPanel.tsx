@@ -564,7 +564,7 @@ function NoteCard({
         </div>
         <button
           onClick={() => onDelete(note)}
-          style={{ ...toolBtnStyle(0.6), fontSize: "13px" }}
+          style={{ ...toolBtnStyle(1), fontSize: "13px", color: "#94a3b8" }}
           title="Delete"
         >
           {"\u2715"}
@@ -768,7 +768,7 @@ function AlertCard({
         </div>
         <button
           onClick={() => onDelete(alert)}
-          style={{ ...toolBtnStyle(0.6), fontSize: "13px" }}
+          style={{ ...toolBtnStyle(1), fontSize: "13px", color: "#94a3b8" }}
           title="Delete"
         >
           {"\u2715"}
