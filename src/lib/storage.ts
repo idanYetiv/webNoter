@@ -1,9 +1,46 @@
 import type { Alert, Note, NoteScope } from "./types";
 
-const PAGE_PREFIX = "webnoter_page_";
-const SITE_PREFIX = "webnoter_site_";
-const ALERT_PAGE_PREFIX = "webnoter_alert_page_";
-const ALERT_SITE_PREFIX = "webnoter_alert_site_";
+const PAGE_PREFIX = "notara_page_";
+const SITE_PREFIX = "notara_site_";
+const ALERT_PAGE_PREFIX = "notara_alert_page_";
+const ALERT_SITE_PREFIX = "notara_alert_site_";
+
+// Legacy prefixes for migration from webNoter
+const LEGACY_PREFIXES = [
+  { old: "webnoter_page_", new: PAGE_PREFIX },
+  { old: "webnoter_site_", new: SITE_PREFIX },
+  { old: "webnoter_alert_page_", new: ALERT_PAGE_PREFIX },
+  { old: "webnoter_alert_site_", new: ALERT_SITE_PREFIX },
+];
+
+/** Migrate data from old webnoter_* keys to notara_* keys. */
+export async function migrateFromWebNoter(): Promise<void> {
+  const all = await chrome.storage.sync.get(null);
+  const updates: Record<string, unknown> = {};
+  const removals: string[] = [];
+
+  for (const [key, value] of Object.entries(all)) {
+    for (const prefix of LEGACY_PREFIXES) {
+      if (key.startsWith(prefix.old)) {
+        const suffix = key.slice(prefix.old.length);
+        const newKey = `${prefix.new}${suffix}`;
+        // Only migrate if new key doesn't already exist
+        if (!(newKey in all)) {
+          updates[newKey] = value;
+        }
+        removals.push(key);
+        break;
+      }
+    }
+  }
+
+  if (Object.keys(updates).length > 0) {
+    await chrome.storage.sync.set(updates);
+  }
+  if (removals.length > 0) {
+    await chrome.storage.sync.remove(removals);
+  }
+}
 
 export function getHostname(url: string): string {
   try {

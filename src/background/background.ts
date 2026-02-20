@@ -1,25 +1,26 @@
-import { getNoteCountForUrl } from "../lib/storage";
+import { getNoteCountForUrl, migrateFromWebNoter } from "../lib/storage";
 import type { MessageAction } from "../lib/types";
 
 // Update badge count for a tab (page + site notes combined)
 async function updateBadge(tabId: number, url: string) {
   const count = await getNoteCountForUrl(url);
   chrome.action.setBadgeText({ text: count > 0 ? String(count) : "", tabId });
-  chrome.action.setBadgeBackgroundColor({ color: "#f59e0b", tabId });
+  chrome.action.setBadgeBackgroundColor({ color: "#00d4ff", tabId });
 }
 
-// Context menu setup
-chrome.runtime.onInstalled.addListener(() => {
+// Migrate legacy storage keys & set up context menu
+chrome.runtime.onInstalled.addListener(async () => {
+  await migrateFromWebNoter();
   chrome.contextMenus.create({
-    id: "webnoter-add",
-    title: "Add webNoter sticky note",
+    id: "notara-add",
+    title: "Add Notara sticky note",
     contexts: ["page"],
   });
 });
 
 // Context menu click
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === "webnoter-add" && tab?.id && tab.url) {
+  if (info.menuItemId === "notara-add" && tab?.id && tab.url) {
     chrome.tabs.sendMessage(tab.id, {
       type: "ADD_NOTE",
       url: tab.url,

@@ -62,7 +62,7 @@ describe("storage", () => {
     await saveNote(note);
 
     expect(chrome.storage.sync.set).toHaveBeenCalledWith({
-      "webnoter_page_https://example.com/page1": [note],
+      "notara_page_https://example.com/page1": [note],
     });
   });
 
@@ -74,7 +74,7 @@ describe("storage", () => {
     await saveNote(note);
 
     expect(chrome.storage.sync.set).toHaveBeenCalledWith({
-      "webnoter_site_example.com": [note],
+      "notara_site_example.com": [note],
     });
   });
 
@@ -83,10 +83,10 @@ describe("storage", () => {
     const siteNote = makeNote({ id: "s1", scope: "site" });
 
     mockGet.mockImplementation((key) => {
-      if (key === "webnoter_page_https://example.com/page1") {
+      if (key === "notara_page_https://example.com/page1") {
         return Promise.resolve({ [key as string]: [pageNote] });
       }
-      if (key === "webnoter_site_example.com") {
+      if (key === "notara_site_example.com") {
         return Promise.resolve({ [key as string]: [siteNote] });
       }
       return Promise.resolve({});
@@ -101,40 +101,40 @@ describe("storage", () => {
   it("deletes a page note and removes key when empty", async () => {
     const note = makeNote();
     mockGet.mockResolvedValue({
-      "webnoter_page_https://example.com/page1": [note],
+      "notara_page_https://example.com/page1": [note],
     });
     mockRemove.mockResolvedValue(undefined);
 
     await deleteNote(note);
     expect(chrome.storage.sync.remove).toHaveBeenCalledWith(
-      "webnoter_page_https://example.com/page1"
+      "notara_page_https://example.com/page1"
     );
   });
 
   it("deletes a site note and removes key when empty", async () => {
     const note = makeNote({ scope: "site" });
     mockGet.mockResolvedValue({
-      "webnoter_site_example.com": [note],
+      "notara_site_example.com": [note],
     });
     mockRemove.mockResolvedValue(undefined);
 
     await deleteNote(note);
     expect(chrome.storage.sync.remove).toHaveBeenCalledWith(
-      "webnoter_site_example.com"
+      "notara_site_example.com"
     );
   });
 
   it("updates a note's text", async () => {
     const note = makeNote();
     mockGet.mockResolvedValue({
-      "webnoter_page_https://example.com/page1": [note],
+      "notara_page_https://example.com/page1": [note],
     });
     mockSet.mockResolvedValue(undefined);
 
     await updateNote(note, { text: "Updated" });
 
     const setCall = mockSet.mock.calls[0][0] as Record<string, Note[]>;
-    const savedNotes = setCall["webnoter_page_https://example.com/page1"];
+    const savedNotes = setCall["notara_page_https://example.com/page1"];
     expect(savedNotes[0].text).toBe("Updated");
   });
 
@@ -145,7 +145,7 @@ describe("storage", () => {
     // Second call: save reads from site key
     mockGet
       .mockResolvedValueOnce({
-        "webnoter_page_https://example.com/page1": [note],
+        "notara_page_https://example.com/page1": [note],
       })
       .mockResolvedValueOnce({});
     mockRemove.mockResolvedValue(undefined);
@@ -155,11 +155,11 @@ describe("storage", () => {
 
     expect(updated.scope).toBe("site");
     expect(chrome.storage.sync.remove).toHaveBeenCalledWith(
-      "webnoter_page_https://example.com/page1"
+      "notara_page_https://example.com/page1"
     );
     expect(chrome.storage.sync.set).toHaveBeenCalledWith(
       expect.objectContaining({
-        "webnoter_site_example.com": expect.any(Array),
+        "notara_site_example.com": expect.any(Array),
       })
     );
   });
@@ -169,8 +169,8 @@ describe("storage", () => {
     const siteNote = makeNote({ id: "s1", scope: "site" });
 
     mockGet.mockResolvedValue({
-      "webnoter_page_https://example.com/page1": [pageNote],
-      "webnoter_site_example.com": [siteNote],
+      "notara_page_https://example.com/page1": [pageNote],
+      "notara_site_example.com": [siteNote],
       other_key: "ignored",
     });
 
@@ -185,10 +185,10 @@ describe("storage", () => {
     const siteNote = makeNote({ id: "s1", scope: "site" });
 
     mockGet.mockImplementation((key) => {
-      if (key === "webnoter_page_https://example.com/page1") {
+      if (key === "notara_page_https://example.com/page1") {
         return Promise.resolve({ [key as string]: [pageNote] });
       }
-      if (key === "webnoter_site_example.com") {
+      if (key === "notara_site_example.com") {
         return Promise.resolve({ [key as string]: [siteNote] });
       }
       return Promise.resolve({});

@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "webNoter",
+  "name": "Notara",
   "description": "Floating sticky notes on any website with screenshot capture",
   "version": "1.0.0",
   "icons": {

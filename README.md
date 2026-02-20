@@ -1,6 +1,6 @@
-# webNoter
+# Notara
 
-A Chrome extension that lets you create floating sticky notes on any website, with screenshot capture.
+A Chrome extension that lets you create floating sticky notes on any website, with screenshot capture. Features a dark & sleek UI with neon cyan accents.
 
 ## Features
 
@@ -11,6 +11,7 @@ A Chrome extension that lets you create floating sticky notes on any website, wi
 - Popup overview of all notes grouped by domain
 - Context menu integration
 - Badge count per tab
+- Dark theme with developer-tool aesthetic
 
 ## Development
 

@@ -11,11 +11,11 @@ export interface NoteSize {
 export type NoteColor = "yellow" | "pink" | "blue" | "green" | "purple";
 
 export const NOTE_COLORS: Record<NoteColor, string> = {
-  yellow: "#fef08a",
-  pink: "#fda4af",
-  blue: "#93c5fd",
-  green: "#86efac",
-  purple: "#c4b5fd",
+  yellow: "#ca8a04",
+  pink: "#e11d48",
+  blue: "#3b82f6",
+  green: "#22c55e",
+  purple: "#8b5cf6",
 };
 
 export type NoteScope = "page" | "site";

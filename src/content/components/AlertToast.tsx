@@ -58,16 +58,16 @@ export default function AlertToast({ alerts }: AlertToastProps) {
         <div
           key={alert.id}
           style={{
-            backgroundColor: "#fffbeb",
-            border: "1px solid #f59e0b",
+            backgroundColor: "#12121f",
+            border: "1px solid #2a2a40",
             borderRadius: "10px",
             padding: "12px 16px",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.4), 0 0 16px rgba(0,212,255,0.15)",
             maxWidth: "320px",
             display: "flex",
             alignItems: "flex-start",
             gap: "10px",
-            animation: "webnoter-slide-in 0.3s ease-out",
+            animation: "notara-slide-in 0.3s ease-out",
           }}
         >
           <span style={{ fontSize: "18px", flexShrink: 0, lineHeight: 1 }}>
@@ -78,7 +78,7 @@ export default function AlertToast({ alerts }: AlertToastProps) {
               flex: 1,
               fontSize: "13px",
               lineHeight: "1.4",
-              color: "#78350f",
+              color: "#e2e8f0",
               whiteSpace: "pre-wrap" as const,
               wordBreak: "break-word" as const,
             }}
@@ -92,7 +92,7 @@ export default function AlertToast({ alerts }: AlertToastProps) {
               border: "none",
               cursor: "pointer",
               fontSize: "14px",
-              color: "#9ca3af",
+              color: "#64748b",
               padding: "0 2px",
               lineHeight: 1,
               flexShrink: 0,
@@ -104,7 +104,7 @@ export default function AlertToast({ alerts }: AlertToastProps) {
         </div>
       ))}
       <style>{`
-        @keyframes webnoter-slide-in {
+        @keyframes notara-slide-in {
           from {
             opacity: 0;
             transform: translateX(100%);

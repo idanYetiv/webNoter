@@ -2,10 +2,10 @@ import { createRoot } from "react-dom/client";
 import ContentApp from "./ContentApp";
 
 function init() {
-  if (document.getElementById("webnoter-root")) return;
+  if (document.getElementById("notara-root")) return;
 
   const container = document.createElement("div");
-  container.id = "webnoter-root";
+  container.id = "notara-root";
   // Reset inherited styles but keep it positioned for fixed children
   container.style.cssText =
     "all:initial; position:fixed; top:0; left:0; width:0; height:0; z-index:2147483647; pointer-events:none;";
@@ -13,7 +13,7 @@ function init() {
 
   // Inner wrapper that re-enables pointer events on actual UI
   const inner = document.createElement("div");
-  inner.id = "webnoter-container";
+  inner.id = "notara-container";
   inner.style.pointerEvents = "auto";
   container.appendChild(inner);
 

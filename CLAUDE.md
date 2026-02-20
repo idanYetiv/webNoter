@@ -1,4 +1,4 @@
-# webNoter Project - Claude Session Guide
+# Notara Project - Claude Session Guide
 
 > **Read this file at the start of each session to get up to speed quickly.**
 
@@ -7,7 +7,7 @@
 ## 1. Session Setup (REQUIRED)
 
 ```bash
-cd ~/webNoter
+cd ~/Notara
 git config user.name "idanYetiv"
 git config user.email "idanyativ@gmail.com"
 ```
@@ -39,7 +39,7 @@ git checkout main && git pull
 
 ## 2. Project Overview
 
-**webNoter** — A Chrome extension that lets users write and save floating sticky notes on any website, with screenshot capture.
+**Notara** — A Chrome extension that lets users write and save floating sticky notes on any website, with screenshot capture. Dark & sleek visual identity with neon cyan accents.
 
 **Target:** Chrome Web Store distribution.
 
@@ -62,7 +62,7 @@ git checkout main && git pull
 ## 4. Project Structure
 
 ```
-~/webNoter/
+~/Notara/
 ├── CLAUDE.md              # This file
 ├── manifest.json          # Chrome Extension Manifest V3
 ├── vite.config.ts
@@ -94,11 +94,13 @@ npm run test:run     # Single run tests
 
 ## 6. Key Patterns
 
-- Content script uses Shadow DOM to isolate styles
+- Content script uses isolated container with pointer-events strategy
 - All notes stored via `chrome.storage.sync` keyed by URL
+- Storage keys use `notara_` prefix (migrated from legacy `webnoter_` prefix)
 - Types defined in `src/lib/types.ts`
 - Storage CRUD in `src/lib/storage.ts`
+- Dark theme with neon cyan (#00d4ff) accent color
 
 ---
 
-*Last updated: February 17, 2026*
+*Last updated: February 20, 2026*
