@@ -3,10 +3,11 @@ import { useNotes } from "../hooks/useNotes";
 import { useAlerts } from "../hooks/useAlerts";
 import FloatingPanel from "./components/FloatingPanel";
 import AlertToast from "./components/AlertToast";
+import UpgradeModal from "./components/UpgradeModal";
 
 export default function ContentApp() {
   const url = window.location.href;
-  const { notes, addNote, removeNote, editNote, toggleScope } = useNotes(url);
+  const { notes, addNote, removeNote, editNote, toggleScope, limitReached, setLimitReached } = useNotes(url);
   const { alerts, addAlert, removeAlert, editAlert, toggleAlert } = useAlerts(url);
   const [forceShow, setForceShow] = useState(0);
 
@@ -37,6 +38,9 @@ export default function ContentApp() {
         onToggleAlert={toggleAlert}
         forceShow={forceShow}
       />
+      {limitReached && (
+        <UpgradeModal onDismiss={() => setLimitReached(false)} />
+      )}
     </>
   );
 }

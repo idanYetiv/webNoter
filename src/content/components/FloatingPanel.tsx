@@ -2,11 +2,12 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import type { Alert, Note, NoteColor, NoteScope } from "../../lib/types";
 import { NOTE_COLORS } from "../../lib/types";
 import { useScreenshot } from "../../hooks/useScreenshot";
+import { FREE_NOTE_LIMIT } from "../../lib/freemium";
 
 interface FloatingPanelProps {
   notes: Note[];
   url: string;
-  onAddNote: (scope?: NoteScope) => Promise<Note>;
+  onAddNote: (scope?: NoteScope) => Promise<Note | null>;
   onDeleteNote: (note: Note) => void;
   onEditNote: (
     note: Note,
@@ -145,7 +146,7 @@ export default function FloatingPanel({
 
   const handleAdd = async () => {
     const note = await onAddNote(autoScope);
-    setEditingId(note.id);
+    if (note) setEditingId(note.id);
   };
 
   const handleAddAlert = async () => {
@@ -181,24 +182,24 @@ export default function FloatingPanel({
             width: "52px",
             height: "52px",
             borderRadius: "50%",
-            backgroundColor: "#fbbf24",
-            border: "3px solid #f59e0b",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
+            backgroundColor: "#1a1a2e",
+            border: "3px solid #00d4ff",
+            boxShadow: "0 4px 16px rgba(0,212,255,0.15), 0 4px 16px rgba(0,0,0,0.25)",
             cursor: "grab",
             fontSize: "22px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#78350f",
+            color: "#00d4ff",
             fontWeight: "bold",
             lineHeight: 1,
             userSelect: "none",
           }}
-          title="Open webNoter"
+          title="Open Notara"
         >
           {notes.length > 0 ? (
-            <span style={{ fontSize: "13px", pointerEvents: "none" }}>
-              {notes.length}
+            <span style={{ fontSize: "10px", pointerEvents: "none" }}>
+              {notes.length}/{FREE_NOTE_LIMIT}
             </span>
           ) : (
             <span style={{ fontSize: "20px", pointerEvents: "none" }}>
@@ -220,19 +221,19 @@ export default function FloatingPanel({
             width: "20px",
             height: "20px",
             borderRadius: "50%",
-            backgroundColor: "#f59e0b",
-            border: "2px solid #d97706",
+            backgroundColor: "#1a1a2e",
+            border: "2px solid #00d4ff",
             cursor: "pointer",
             fontSize: "10px",
             fontWeight: "bold",
-            color: "#78350f",
+            color: "#00d4ff",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             padding: 0,
             lineHeight: 1,
           }}
-          title="Hide webNoter"
+          title="Hide Notara"
         >
           {"\u2715"}
         </button>
@@ -251,14 +252,14 @@ export default function FloatingPanel({
         width: "320px",
         maxHeight: "500px",
         borderRadius: "16px",
-        backgroundColor: "#fffbeb",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+        backgroundColor: "#12121f",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.4), 0 0 24px rgba(0,212,255,0.15)",
         zIndex: 2147483647,
         fontFamily: "system-ui, -apple-system, sans-serif",
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
-        border: "1px solid #f59e0b",
+        border: "1px solid #2a2a40",
         direction: "ltr",
         textAlign: "left" as const,
       }}
@@ -271,26 +272,26 @@ export default function FloatingPanel({
           alignItems: "center",
           justifyContent: "space-between",
           padding: "12px 16px",
-          backgroundColor: "#fbbf24",
-          borderBottom: "1px solid #f59e0b",
+          backgroundColor: "#1a1a2e",
+          borderBottom: "1px solid #2a2a40",
           cursor: "grab",
           userSelect: "none",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ fontSize: "18px", fontWeight: "bold", color: "#78350f" }}>
-            webNoter
+          <span style={{ fontSize: "18px", fontWeight: "bold", color: "#00d4ff" }}>
+            Notara
           </span>
           <span
             style={{
               fontSize: "11px",
-              backgroundColor: "rgba(120,53,15,0.15)",
+              backgroundColor: "rgba(0,212,255,0.15)",
               padding: "2px 8px",
               borderRadius: "12px",
-              color: "#78350f",
+              color: "#00d4ff",
             }}
           >
-            {notes.length}
+            {notes.length} / {FREE_NOTE_LIMIT}
           </span>
         </div>
         <button
@@ -304,7 +305,7 @@ export default function FloatingPanel({
             border: "none",
             cursor: "pointer",
             fontSize: "18px",
-            color: "#78350f",
+            color: "#64748b",
             padding: "0 4px",
             lineHeight: 1,
           }}
@@ -315,11 +316,11 @@ export default function FloatingPanel({
       </div>
 
       {/* Location + add buttons */}
-      <div style={{ padding: "10px 16px", borderBottom: "1px solid #fde68a" }}>
+      <div style={{ padding: "10px 16px", borderBottom: "1px solid #2a2a40" }}>
         <div
           style={{
             fontSize: "11px",
-            color: "#6b7280",
+            color: "#64748b",
             marginBottom: "8px",
             display: "flex",
             alignItems: "center",
@@ -341,13 +342,13 @@ export default function FloatingPanel({
         <div style={{ display: "flex", gap: "6px" }}>
           <button
             onClick={handleAdd}
-            style={addBtnStyle("#fbbf24", "#78350f")}
+            style={addBtnStyle("#1a1a2e", "#00d4ff")}
           >
             + Add Note
           </button>
           <button
             onClick={handleAddAlert}
-            style={addBtnStyle("#fbbf24", "#78350f")}
+            style={addBtnStyle("#1a1a2e", "#00d4ff")}
           >
             {"\uD83D\uDD14"} Add Alert
           </button>
@@ -394,7 +395,7 @@ export default function FloatingPanel({
 
         {/* Notes section */}
         {notes.length === 0 && alerts.length === 0 ? (
-          <div style={{ textAlign: "center", color: "#9ca3af", fontSize: "13px", padding: "24px 0" }}>
+          <div style={{ textAlign: "center", color: "#64748b", fontSize: "13px", padding: "24px 0" }}>
             <div style={{ fontSize: "28px", marginBottom: "8px" }}>{"\u{1F4DD}"}</div>
             No notes on this page yet.
           </div>
@@ -453,7 +454,7 @@ function SectionHeader({ icon, title }: { icon: string; title: string }) {
       style={{
         fontSize: "11px",
         fontWeight: 600,
-        color: "#6b7280",
+        color: "#64748b",
         textTransform: "uppercase" as const,
         letterSpacing: "0.05em",
         margin: "8px 0 4px",
@@ -520,11 +521,12 @@ function NoteCard({
   return (
     <div
       style={{
-        backgroundColor: bgColor,
+        backgroundColor: "#1a1a2e",
         borderRadius: "10px",
         marginBottom: "6px",
         overflow: "hidden",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+        boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
+        borderLeft: `3px solid ${bgColor}`,
       }}
     >
       {/* Note toolbar */}
@@ -534,7 +536,7 @@ function NoteCard({
           alignItems: "center",
           justifyContent: "space-between",
           padding: "6px 10px",
-          borderBottom: editing ? "1px solid rgba(0,0,0,0.1)" : "none",
+          borderBottom: editing ? "1px solid #2a2a40" : "none",
         }}
       >
         <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
@@ -584,7 +586,7 @@ function NoteCard({
                 height: "22px",
                 borderRadius: "50%",
                 backgroundColor: NOTE_COLORS[c],
-                border: c === note.color ? "2px solid #333" : "1px solid rgba(0,0,0,0.15)",
+                border: c === note.color ? "2px solid #e2e8f0" : "1px solid #2a2a40",
                 cursor: "pointer",
                 padding: 0,
               }}
@@ -598,7 +600,7 @@ function NoteCard({
         style={{
           padding: "2px 10px 4px",
           fontSize: "10px",
-          color: "#9ca3af",
+          color: "#64748b",
           display: "flex",
           gap: "8px",
         }}
@@ -631,6 +633,7 @@ function NoteCard({
               lineHeight: "1.5",
               padding: "6px 10px 4px",
               boxSizing: "border-box",
+              color: "#e2e8f0",
             }}
           />
           <div style={{ display: "flex", justifyContent: "flex-end", padding: "0 10px 6px" }}>
@@ -667,7 +670,7 @@ function NoteCard({
             padding: "6px 10px 8px",
             fontSize: "13px",
             lineHeight: "1.5",
-            color: note.text ? "#374151" : "#9ca3af",
+            color: note.text ? "#e2e8f0" : "#64748b",
             cursor: "text",
             minHeight: "32px",
             whiteSpace: "pre-wrap" as const,
@@ -732,11 +735,12 @@ function AlertCard({
   return (
     <div
       style={{
-        backgroundColor: alert.enabled ? "#fef3c7" : "#f3f4f6",
+        backgroundColor: alert.enabled ? "#1a1a2e" : "#0a0a14",
         borderRadius: "10px",
         marginBottom: "6px",
         overflow: "hidden",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+        boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
+        borderLeft: `3px solid ${alert.enabled ? "#00d4ff" : "#2a2a40"}`,
         opacity: alert.enabled ? 1 : 0.7,
       }}
     >
@@ -747,7 +751,7 @@ function AlertCard({
           alignItems: "center",
           justifyContent: "space-between",
           padding: "6px 10px",
-          borderBottom: editing ? "1px solid rgba(0,0,0,0.1)" : "none",
+          borderBottom: editing ? "1px solid #2a2a40" : "none",
         }}
       >
         <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
@@ -793,6 +797,7 @@ function AlertCard({
               lineHeight: "1.5",
               padding: "6px 10px 4px",
               boxSizing: "border-box",
+              color: "#e2e8f0",
             }}
           />
           <div style={{ display: "flex", justifyContent: "flex-end", padding: "0 10px 6px" }}>
@@ -829,7 +834,7 @@ function AlertCard({
             padding: "6px 10px 8px",
             fontSize: "13px",
             lineHeight: "1.5",
-            color: alert.message ? "#374151" : "#9ca3af",
+            color: alert.message ? "#e2e8f0" : "#64748b",
             cursor: "text",
             minHeight: "32px",
             whiteSpace: "pre-wrap" as const,
@@ -867,7 +872,7 @@ function addBtnStyle(bg: string, color: string): React.CSSProperties {
     flex: 1,
     padding: "8px",
     backgroundColor: bg,
-    border: "none",
+    border: "1px solid #2a2a40",
     borderRadius: "8px",
     cursor: "pointer",
     fontSize: "13px",

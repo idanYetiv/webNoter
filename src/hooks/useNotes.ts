@@ -7,10 +7,12 @@ import {
   updateNote,
   changeNoteScope,
 } from "../lib/storage";
+import { canCreateNote } from "../lib/freemium";
 
 export function useNotes(url: string) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
+  const [limitReached, setLimitReached] = useState(false);
 
   const loadNotes = useCallback(async () => {
     setLoading(true);
@@ -25,6 +27,12 @@ export function useNotes(url: string) {
 
   const addNote = useCallback(
     async (scope: NoteScope = "page") => {
+      const check = await canCreateNote();
+      if (!check.allowed) {
+        setLimitReached(true);
+        return null;
+      }
+
       const note: Note = {
         id: crypto.randomUUID(),
         url,
@@ -80,5 +88,5 @@ export function useNotes(url: string) {
     [editNote]
   );
 
-  return { notes, loading, addNote, removeNote, editNote, toggleScope, changeColor };
+  return { notes, loading, addNote, removeNote, editNote, toggleScope, changeColor, limitReached, setLimitReached };
 }

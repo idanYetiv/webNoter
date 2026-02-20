@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import type { Note } from "../lib/types";
 import { getAllNotes, deleteNote } from "../lib/storage";
 import { NOTE_COLORS } from "../lib/types";
+import { canCreateNote, FREE_NOTE_LIMIT } from "../lib/freemium";
 
 interface SiteGroup {
   domain: string;
@@ -32,6 +33,7 @@ function groupByDomain(allNotes: Record<string, Note[]>): SiteGroup[] {
 export default function Popup() {
   const [groups, setGroups] = useState<SiteGroup[]>([]);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [atLimit, setAtLimit] = useState(false);
 
   useEffect(() => {
     loadNotes();
@@ -40,6 +42,8 @@ export default function Popup() {
   async function loadNotes() {
     const allNotes = await getAllNotes();
     setGroups(groupByDomain(allNotes));
+    const check = await canCreateNote();
+    setAtLimit(!check.allowed);
   }
 
   function toggleExpand(domain: string) {
@@ -69,32 +73,35 @@ export default function Popup() {
   const totalNotes = groups.reduce((sum, g) => sum + g.notes.length, 0);
 
   return (
-    <div className="flex flex-col h-full bg-amber-50 text-gray-800">
+    <div className="flex flex-col h-full text-[#e2e8f0]" style={{ backgroundColor: "#0a0a14" }}>
       {/* Header */}
-      <div className="p-4 bg-amber-400 text-gray-900">
+      <div className="p-4" style={{ backgroundColor: "#1a1a2e", borderBottom: "1px solid #2a2a40" }}>
         <div className="flex items-center justify-between">
-          <h1 className="text-lg font-bold">webNoter</h1>
-          <span className="text-sm bg-amber-500/30 px-2 py-0.5 rounded-full">
-            {totalNotes} note{totalNotes !== 1 ? "s" : ""}
+          <h1 className="text-lg font-bold" style={{ color: "#00d4ff" }}>Notara</h1>
+          <span className="text-sm px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(0,212,255,0.15)", color: atLimit ? "#f87171" : "#00d4ff" }}>
+            {totalNotes} / {FREE_NOTE_LIMIT} notes
           </span>
         </div>
-        <p className="text-xs mt-1 opacity-80">Sticky notes on any website</p>
+        <p className="text-xs mt-1" style={{ color: "#64748b" }}>Sticky notes on any website</p>
       </div>
 
       {/* Add note button */}
       <div className="p-3">
         <button
           onClick={handleAddNote}
-          className="w-full py-2 px-4 bg-amber-400 hover:bg-amber-500 text-gray-900 rounded-lg font-medium text-sm transition-colors cursor-pointer"
+          disabled={atLimit}
+          className="w-full py-2 px-4 rounded-lg font-medium text-sm transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+          style={{ backgroundColor: "#1a1a2e", color: atLimit ? "#64748b" : "#00d4ff", border: "1px solid #2a2a40" }}
+          title={atLimit ? `Note limit reached (${FREE_NOTE_LIMIT})` : undefined}
         >
-          + Add Note to Current Page
+          {atLimit ? `Limit reached (${FREE_NOTE_LIMIT} notes)` : "+ Add Note to Current Page"}
         </button>
       </div>
 
       {/* Sites list */}
       <div className="flex-1 overflow-y-auto px-3 pb-3">
         {groups.length === 0 ? (
-          <div className="text-center text-gray-500 mt-8 text-sm">
+          <div className="text-center mt-8 text-sm" style={{ color: "#64748b" }}>
             <p>No notes yet!</p>
             <p className="mt-1">Click the + button to add your first note.</p>
           </div>
@@ -103,17 +110,18 @@ export default function Popup() {
             <div key={group.domain} className="mb-2">
               <button
                 onClick={() => toggleExpand(group.domain)}
-                className="w-full flex items-center justify-between p-2 bg-white rounded-lg shadow-sm hover:shadow text-left cursor-pointer"
+                className="w-full flex items-center justify-between p-2 rounded-lg text-left cursor-pointer"
+                style={{ backgroundColor: "#12121f", border: "1px solid #2a2a40" }}
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-sm">
+                  <span className="text-sm" style={{ color: "#64748b" }}>
                     {expanded.has(group.domain) ? "\u25BC" : "\u25B6"}
                   </span>
-                  <span className="font-medium text-sm truncate">
+                  <span className="font-medium text-sm truncate" style={{ color: "#e2e8f0" }}>
                     {group.domain}
                   </span>
                 </div>
-                <span className="text-xs bg-amber-100 px-2 py-0.5 rounded-full flex-shrink-0">
+                <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: "rgba(0,212,255,0.15)", color: "#00d4ff" }}>
                   {group.notes.length}
                 </span>
               </button>
@@ -123,7 +131,8 @@ export default function Popup() {
                   {group.notes.map((note) => (
                     <div
                       key={note.id}
-                      className="flex items-center gap-2 p-2 bg-white rounded shadow-sm text-xs"
+                      className="flex items-center gap-2 p-2 rounded text-xs"
+                      style={{ backgroundColor: "#1a1a2e", border: "1px solid #2a2a40" }}
                     >
                       <div
                         className="w-3 h-3 rounded-full flex-shrink-0"
@@ -139,12 +148,13 @@ export default function Popup() {
                       >
                         {note.scope === "site" ? "\u{1F310}" : "\u{1F4C4}"}
                       </span>
-                      <span className="flex-1 truncate">
+                      <span className="flex-1 truncate" style={{ color: "#e2e8f0" }}>
                         {note.text || "(empty note)"}
                       </span>
                       <button
                         onClick={() => handleDeleteNote(note)}
-                        className="text-gray-400 hover:text-red-500 flex-shrink-0 cursor-pointer"
+                        className="flex-shrink-0 cursor-pointer"
+                        style={{ color: "#64748b" }}
                         title="Delete note"
                       >
                         {"\u2715"}
