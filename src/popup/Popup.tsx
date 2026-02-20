@@ -154,7 +154,7 @@ export default function Popup() {
                       <button
                         onClick={() => handleDeleteNote(note)}
                         className="flex-shrink-0 cursor-pointer"
-                        style={{ color: "#64748b" }}
+                        style={{ color: "#94a3b8" }}
                         title="Delete note"
                       >
                         {"\u2715"}
