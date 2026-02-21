@@ -3,37 +3,15 @@ import type { Note } from "../lib/types";
 import { getAllNotes, deleteNote } from "../lib/storage";
 import { NOTE_COLORS } from "../lib/types";
 import { canCreateNote, FREE_NOTE_LIMIT } from "../lib/freemium";
-
-interface SiteGroup {
-  domain: string;
-  notes: Note[];
-}
-
-function groupByDomain(allNotes: Record<string, Note[]>): SiteGroup[] {
-  const domainMap = new Map<string, Note[]>();
-
-  for (const notes of Object.values(allNotes)) {
-    for (const note of notes) {
-      let domain: string;
-      try {
-        domain = new URL(note.url).hostname;
-      } catch {
-        domain = note.url;
-      }
-      if (!domainMap.has(domain)) domainMap.set(domain, []);
-      domainMap.get(domain)!.push(note);
-    }
-  }
-
-  return Array.from(domainMap.entries())
-    .map(([domain, notes]) => ({ domain, notes }))
-    .sort((a, b) => b.notes.length - a.notes.length);
-}
+import { groupByDomain } from "../lib/grouping";
+import { useAuth } from "../hooks/useAuth";
+import AuthSection from "./components/AuthSection";
 
 export default function Popup() {
-  const [groups, setGroups] = useState<SiteGroup[]>([]);
+  const [groups, setGroups] = useState<{ domain: string; items: Note[] }[]>([]);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [atLimit, setAtLimit] = useState(false);
+  const auth = useAuth();
 
   useEffect(() => {
     loadNotes();
@@ -70,7 +48,7 @@ export default function Popup() {
     }
   }
 
-  const totalNotes = groups.reduce((sum, g) => sum + g.notes.length, 0);
+  const totalNotes = groups.reduce((sum, g) => sum + g.items.length, 0);
 
   return (
     <div className="flex flex-col h-full text-[#e2e8f0]" style={{ backgroundColor: "#0a0a14" }}>
@@ -84,6 +62,9 @@ export default function Popup() {
         </div>
         <p className="text-xs mt-1" style={{ color: "#64748b" }}>Sticky notes on any website</p>
       </div>
+
+      {/* Auth section */}
+      <AuthSection {...auth} />
 
       {/* Add note button */}
       <div className="p-3">
@@ -122,13 +103,13 @@ export default function Popup() {
                   </span>
                 </div>
                 <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: "rgba(0,212,255,0.15)", color: "#00d4ff" }}>
-                  {group.notes.length}
+                  {group.items.length}
                 </span>
               </button>
 
               {expanded.has(group.domain) && (
                 <div className="ml-4 mt-1 space-y-1">
-                  {group.notes.map((note) => (
+                  {group.items.map((note) => (
                     <div
                       key={note.id}
                       className="flex items-center gap-2 p-2 rounded text-xs"

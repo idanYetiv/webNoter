@@ -54,6 +54,7 @@ git checkout main && git pull
 | Build | Vite + @crxjs/vite-plugin |
 | Styling | Tailwind CSS v4 |
 | Storage | Chrome Storage API (sync) |
+| Auth | Supabase Auth + Google OAuth (`chrome.identity.launchWebAuthFlow`) |
 | Screenshots | html2canvas |
 | Testing | Vitest + Testing Library |
 
@@ -64,16 +65,18 @@ git checkout main && git pull
 ```
 ~/Notara/
 ├── CLAUDE.md              # This file
+├── .env.example           # Supabase + Google OAuth credentials template
 ├── manifest.json          # Chrome Extension Manifest V3
 ├── vite.config.ts
 ├── public/                # Extension icons
 └── src/
     ├── popup/             # Extension popup UI
+    │   └── components/    # AuthSection
     ├── content/           # Content script (floating notes)
     │   └── components/    # StickyNote, NoteEditor, ScreenshotButton
-    ├── background/        # Service worker
-    ├── lib/               # Storage, screenshot, types
-    ├── hooks/             # useNotes, useScreenshot
+    ├── background/        # Service worker (Supabase client lives here)
+    ├── lib/               # Storage, screenshot, types, auth, supabase
+    ├── hooks/             # useNotes, useScreenshot, useAuth
     └── styles/            # Tailwind global CSS
 ```
 
@@ -103,4 +106,17 @@ npm run test:run     # Single run tests
 
 ---
 
-*Last updated: February 20, 2026*
+## 7. Auth Architecture (Phase 1)
+
+- **Google-only sign-in** via Supabase Auth + `chrome.identity.launchWebAuthFlow()`
+- **Supabase client** lives in background service worker only (`src/lib/supabase.ts`)
+- Uses custom `chrome.storage.local` adapter (service workers have no localStorage)
+- Popup/content scripts communicate with background via Chrome messaging (`SIGN_IN_GOOGLE`, `SIGN_OUT`, `GET_AUTH_STATE`)
+- User profile cached in `chrome.storage.session`; Supabase refresh token persisted in `chrome.storage.local`
+- Extension icon click opens popup (with auth UI + toggle button); no longer directly toggles panel
+- **Phase 1 = auth only** — notes stay in chrome.storage, no DB sync yet
+- Credentials set via `.env` (see `.env.example`); requires Supabase project + Google Cloud Console setup
+
+---
+
+*Last updated: February 21, 2026*

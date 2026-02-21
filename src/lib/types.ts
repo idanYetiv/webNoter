@@ -18,7 +18,15 @@ export const NOTE_COLORS: Record<NoteColor, string> = {
   purple: "#8b5cf6",
 };
 
-export type NoteScope = "page" | "site";
+export type NoteScope = "page" | "site" | "global";
+
+export interface AlertSchedule {
+  type: "daily" | "weekly" | "custom";
+  dayOfWeek?: number; // 0 = Sunday, 6 = Saturday
+  timeOfDay: string; // "HH:MM" format
+  intervalMinutes?: number; // for custom type
+  alarmName: string;
+}
 
 export interface Note {
   id: string;
@@ -40,6 +48,7 @@ export interface Alert {
   scope: NoteScope;
   message: string;
   enabled: boolean;
+  schedule?: AlertSchedule;
   createdAt: number;
   updatedAt: number;
 }
@@ -47,4 +56,10 @@ export interface Alert {
 export type MessageAction =
   | { type: "ADD_NOTE"; url: string }
   | { type: "GET_NOTE_COUNT"; url: string }
-  | { type: "NOTE_COUNT"; count: number };
+  | { type: "NOTE_COUNT"; count: number }
+  | { type: "SCHEDULE_ALERT"; alert: Alert }
+  | { type: "CANCEL_ALERT"; alarmName: string }
+  | { type: "SIGN_IN_GOOGLE" }
+  | { type: "SIGN_OUT" }
+  | { type: "GET_AUTH_STATE" }
+  | { type: "TOGGLE_PANEL" };

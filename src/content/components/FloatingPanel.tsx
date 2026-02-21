@@ -1,8 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import type { Alert, Note, NoteColor, NoteScope } from "../../lib/types";
+import type { Alert, AlertSchedule, Note, NoteColor, NoteScope } from "../../lib/types";
 import { NOTE_COLORS } from "../../lib/types";
 import { useScreenshot } from "../../hooks/useScreenshot";
 import { FREE_NOTE_LIMIT } from "../../lib/freemium";
+import { saveGlobalAlert } from "../../lib/storage";
+import { useAuth } from "../../hooks/useAuth";
+import GlobalPanel from "./GlobalPanel";
+import ScheduleModal from "./ScheduleModal";
 
 interface FloatingPanelProps {
   notes: Note[];
@@ -122,6 +126,7 @@ export default function FloatingPanel({
 }: FloatingPanelProps) {
   const [open, setOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const auth = useAuth();
 
   useEffect(() => {
     if (forceShow) {
@@ -132,6 +137,8 @@ export default function FloatingPanel({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingAlertId, setEditingAlertId] = useState<string | null>(null);
   const [colorPickerId, setColorPickerId] = useState<string | null>(null);
+  const [globalPanelOpen, setGlobalPanelOpen] = useState(false);
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const { onMouseDown, wasDragged } = useDrag(panelRef);
 
@@ -152,6 +159,23 @@ export default function FloatingPanel({
   const handleAddAlert = async () => {
     const alert = await onAddAlert(autoScope);
     setEditingAlertId(alert.id);
+  };
+
+  const handleScheduleAlertSave = async (message: string, schedule: AlertSchedule) => {
+    const now = Date.now();
+    const alert: Alert = {
+      id: crypto.randomUUID(),
+      url: "",
+      scope: "global",
+      message,
+      enabled: true,
+      schedule,
+      createdAt: now,
+      updatedAt: now,
+    };
+    await saveGlobalAlert(alert);
+    chrome.runtime.sendMessage({ type: "SCHEDULE_ALERT", alert });
+    setScheduleModalOpen(false);
   };
 
   // --- Hidden — nothing rendered, reopen via extension icon ---
@@ -243,6 +267,7 @@ export default function FloatingPanel({
 
   // --- Expanded panel ---
   return (
+    <>
     <div
       ref={panelRef}
       style={{
@@ -258,12 +283,26 @@ export default function FloatingPanel({
         fontFamily: "system-ui, -apple-system, sans-serif",
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden",
+        overflow: "visible",
         border: "1px solid #2a2a40",
         direction: "ltr",
         textAlign: "left" as const,
       }}
     >
+      {/* Global management panel (left side) */}
+      {auth.isAuthenticated && globalPanelOpen && (
+        <GlobalPanel onClose={() => setGlobalPanelOpen(false)} />
+      )}
+
+      {/* Inner content wrapper — clips overflow while outer allows GlobalPanel */}
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        maxHeight: "500px",
+        overflow: "hidden",
+        borderRadius: "16px",
+      }}>
       {/* Header — draggable */}
       <div
         onMouseDown={onMouseDown}
@@ -282,167 +321,293 @@ export default function FloatingPanel({
           <span style={{ fontSize: "18px", fontWeight: "bold", color: "#00d4ff" }}>
             Notara
           </span>
-          <span
+          {auth.isAuthenticated && (
+            <span
+              style={{
+                fontSize: "11px",
+                backgroundColor: "rgba(0,212,255,0.15)",
+                padding: "2px 8px",
+                borderRadius: "12px",
+                color: "#00d4ff",
+              }}
+            >
+              {notes.length} / {FREE_NOTE_LIMIT}
+            </span>
+          )}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+          {auth.isAuthenticated && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setGlobalPanelOpen((p) => !p);
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              style={{
+                background: globalPanelOpen ? "rgba(0,212,255,0.15)" : "none",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "16px",
+                color: globalPanelOpen ? "#00d4ff" : "#64748b",
+                padding: "2px 6px",
+                lineHeight: 1,
+                borderRadius: "6px",
+              }}
+              title="Global management panel"
+            >
+              {"\u{1F4CB}"}
+            </button>
+          )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpen(false);
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "18px",
+              color: "#64748b",
+              padding: "0 4px",
+              lineHeight: 1,
+            }}
+            title="Minimize"
+          >
+            {"\u2212"}
+          </button>
+        </div>
+      </div>
+
+      {/* --- Not authenticated: sign-in screen --- */}
+      {!auth.isAuthenticated && !auth.loading && (
+        <div style={{ padding: "32px 24px", textAlign: "center" }}>
+          <div style={{ fontSize: "36px", marginBottom: "12px" }}>{"\u{1F4DD}"}</div>
+          <p style={{ fontSize: "14px", color: "#e2e8f0", fontWeight: 600, marginBottom: "4px" }}>
+            Welcome to Notara
+          </p>
+          <p style={{ fontSize: "12px", color: "#64748b", marginBottom: "20px" }}>
+            Sign in to start creating sticky notes on any website.
+          </p>
+          <button
+            onClick={auth.signIn}
+            style={{
+              width: "100%", padding: "10px", backgroundColor: "#1a1a2e",
+              border: "1px solid #2a2a40", borderRadius: "10px", cursor: "pointer",
+              fontSize: "13px", fontWeight: 500, color: "#e2e8f0", display: "flex",
+              alignItems: "center", justifyContent: "center", gap: "8px",
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 48 48">
+              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+              <path fill="#FBBC05" d="M10.53 28.59a14.5 14.5 0 0 1 0-9.18l-7.98-6.19a24.01 24.01 0 0 0 0 21.56l7.98-6.19z"/>
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+            </svg>
+            Sign in with Google
+          </button>
+          {auth.error && (
+            <p style={{ fontSize: "11px", color: "#f87171", marginTop: "10px", wordBreak: "break-word" as const }}>
+              {auth.error}
+            </p>
+          )}
+        </div>
+      )}
+
+      {auth.loading && (
+        <div style={{ padding: "32px 24px", textAlign: "center" }}>
+          <span style={{ fontSize: "13px", color: "#64748b" }}>Loading...</span>
+        </div>
+      )}
+
+      {/* --- Authenticated: full panel content --- */}
+      {auth.isAuthenticated && (
+        <>
+        {/* Location + add buttons */}
+        <div style={{ padding: "10px 16px", borderBottom: "1px solid #2a2a40" }}>
+          <div
             style={{
               fontSize: "11px",
-              backgroundColor: "rgba(0,212,255,0.15)",
-              padding: "2px 8px",
-              borderRadius: "12px",
-              color: "#00d4ff",
-            }}
-          >
-            {notes.length} / {FREE_NOTE_LIMIT}
-          </span>
-        </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setOpen(false);
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            fontSize: "18px",
-            color: "#64748b",
-            padding: "0 4px",
-            lineHeight: 1,
-          }}
-          title="Minimize"
-        >
-          {"\u2212"}
-        </button>
-      </div>
-
-      {/* Location + add buttons */}
-      <div style={{ padding: "10px 16px", borderBottom: "1px solid #2a2a40" }}>
-        <div
-          style={{
-            fontSize: "11px",
-            color: "#64748b",
-            marginBottom: "8px",
-            display: "flex",
-            alignItems: "center",
-            gap: "4px",
-            overflow: "hidden",
-          }}
-        >
-          {location.isMain ? "\u{1F310}" : "\u{1F4C4}"}
-          <span
-            style={{
+              color: "#64748b",
+              marginBottom: "8px",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
               overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap" as const,
             }}
           >
-            {location.label}
-          </span>
-        </div>
-        <div style={{ display: "flex", gap: "6px" }}>
-          <button
-            onClick={handleAdd}
-            style={addBtnStyle("#1a1a2e", "#00d4ff")}
-          >
-            + Add Note
-          </button>
-          <button
-            onClick={handleAddAlert}
-            style={addBtnStyle("#1a1a2e", "#00d4ff")}
-          >
-            {"\uD83D\uDD14"} Add Alert
-          </button>
-        </div>
-      </div>
-
-      {/* Alerts + Notes list */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "8px 12px 12px" }}>
-        {/* Alerts section */}
-        {alerts.length > 0 && (
-          <>
-            {siteAlerts.length > 0 && (
-              <SectionHeader icon={"\uD83D\uDD14"} title="Site Alerts" />
-            )}
-            {siteAlerts.map((alert) => (
-              <AlertCard
-                key={alert.id}
-                alert={alert}
-                editing={editingAlertId === alert.id}
-                onStartEdit={() => setEditingAlertId(alert.id)}
-                onStopEdit={() => setEditingAlertId(null)}
-                onEdit={onEditAlert}
-                onDelete={onDeleteAlert}
-                onToggle={onToggleAlert}
-              />
-            ))}
-            {pageAlerts.length > 0 && (
-              <SectionHeader icon={"\uD83D\uDD14"} title="Page Alerts" />
-            )}
-            {pageAlerts.map((alert) => (
-              <AlertCard
-                key={alert.id}
-                alert={alert}
-                editing={editingAlertId === alert.id}
-                onStartEdit={() => setEditingAlertId(alert.id)}
-                onStopEdit={() => setEditingAlertId(null)}
-                onEdit={onEditAlert}
-                onDelete={onDeleteAlert}
-                onToggle={onToggleAlert}
-              />
-            ))}
-          </>
-        )}
-
-        {/* Notes section */}
-        {notes.length === 0 && alerts.length === 0 ? (
-          <div style={{ textAlign: "center", color: "#64748b", fontSize: "13px", padding: "24px 0" }}>
-            <div style={{ fontSize: "28px", marginBottom: "8px" }}>{"\u{1F4DD}"}</div>
-            No notes on this page yet.
+            {location.isMain ? "\u{1F310}" : "\u{1F4C4}"}
+            <span
+              style={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap" as const,
+              }}
+            >
+              {location.label}
+            </span>
           </div>
-        ) : (
-          <>
-            {siteNotes.length > 0 && (
-              <SectionHeader icon={"\u{1F310}"} title="Site Notes" />
-            )}
-            {siteNotes.map((note) => (
-              <NoteCard
-                key={note.id}
-                note={note}
-                editing={editingId === note.id}
-                showColorPicker={colorPickerId === note.id}
-                onStartEdit={() => setEditingId(note.id)}
-                onStopEdit={() => setEditingId(null)}
-                onToggleColor={() =>
-                  setColorPickerId(colorPickerId === note.id ? null : note.id)
-                }
-                onEdit={onEditNote}
-                onDelete={onDeleteNote}
-                onToggleScope={onToggleScope}
-              />
-            ))}
-            {pageNotes.length > 0 && (
-              <SectionHeader icon={"\u{1F4C4}"} title="Page Notes" />
-            )}
-            {pageNotes.map((note) => (
-              <NoteCard
-                key={note.id}
-                note={note}
-                editing={editingId === note.id}
-                showColorPicker={colorPickerId === note.id}
-                onStartEdit={() => setEditingId(note.id)}
-                onStopEdit={() => setEditingId(null)}
-                onToggleColor={() =>
-                  setColorPickerId(colorPickerId === note.id ? null : note.id)
-                }
-                onEdit={onEditNote}
-                onDelete={onDeleteNote}
-                onToggleScope={onToggleScope}
-              />
-            ))}
-          </>
-        )}
-      </div>
+          <div style={{ display: "flex", gap: "6px" }}>
+            <button
+              onClick={handleAdd}
+              style={addBtnStyle("#1a1a2e", "#00d4ff")}
+            >
+              + Add Note
+            </button>
+            <button
+              onClick={handleAddAlert}
+              style={addBtnStyle("#1a1a2e", "#00d4ff")}
+            >
+              {"\uD83D\uDD14"} Add Alert
+            </button>
+          </div>
+          <div style={{ marginTop: "6px" }}>
+            <button
+              onClick={() => setScheduleModalOpen(true)}
+              style={{
+                ...addBtnStyle("#1a1a2e", "#00d4ff"),
+                width: "100%",
+              }}
+            >
+              {"\u23F0"} Schedule Alert
+            </button>
+          </div>
+        </div>
+
+        {/* Alerts + Notes list */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "8px 12px 12px" }}>
+          {/* Alerts section */}
+          {alerts.length > 0 && (
+            <>
+              {siteAlerts.length > 0 && (
+                <SectionHeader icon={"\uD83D\uDD14"} title="Site Alerts" />
+              )}
+              {siteAlerts.map((alert) => (
+                <AlertCard
+                  key={alert.id}
+                  alert={alert}
+                  editing={editingAlertId === alert.id}
+                  onStartEdit={() => setEditingAlertId(alert.id)}
+                  onStopEdit={() => setEditingAlertId(null)}
+                  onEdit={onEditAlert}
+                  onDelete={onDeleteAlert}
+                  onToggle={onToggleAlert}
+                />
+              ))}
+              {pageAlerts.length > 0 && (
+                <SectionHeader icon={"\uD83D\uDD14"} title="Page Alerts" />
+              )}
+              {pageAlerts.map((alert) => (
+                <AlertCard
+                  key={alert.id}
+                  alert={alert}
+                  editing={editingAlertId === alert.id}
+                  onStartEdit={() => setEditingAlertId(alert.id)}
+                  onStopEdit={() => setEditingAlertId(null)}
+                  onEdit={onEditAlert}
+                  onDelete={onDeleteAlert}
+                  onToggle={onToggleAlert}
+                />
+              ))}
+            </>
+          )}
+
+          {/* Notes section */}
+          {notes.length === 0 && alerts.length === 0 ? (
+            <div style={{ textAlign: "center", color: "#64748b", fontSize: "13px", padding: "24px 0" }}>
+              <div style={{ fontSize: "28px", marginBottom: "8px" }}>{"\u{1F4DD}"}</div>
+              No notes on this page yet.
+            </div>
+          ) : (
+            <>
+              {siteNotes.length > 0 && (
+                <SectionHeader icon={"\u{1F310}"} title="Site Notes" />
+              )}
+              {siteNotes.map((note) => (
+                <NoteCard
+                  key={note.id}
+                  note={note}
+                  editing={editingId === note.id}
+                  showColorPicker={colorPickerId === note.id}
+                  onStartEdit={() => setEditingId(note.id)}
+                  onStopEdit={() => setEditingId(null)}
+                  onToggleColor={() =>
+                    setColorPickerId(colorPickerId === note.id ? null : note.id)
+                  }
+                  onEdit={onEditNote}
+                  onDelete={onDeleteNote}
+                  onToggleScope={onToggleScope}
+                />
+              ))}
+              {pageNotes.length > 0 && (
+                <SectionHeader icon={"\u{1F4C4}"} title="Page Notes" />
+              )}
+              {pageNotes.map((note) => (
+                <NoteCard
+                  key={note.id}
+                  note={note}
+                  editing={editingId === note.id}
+                  showColorPicker={colorPickerId === note.id}
+                  onStartEdit={() => setEditingId(note.id)}
+                  onStopEdit={() => setEditingId(null)}
+                  onToggleColor={() =>
+                    setColorPickerId(colorPickerId === note.id ? null : note.id)
+                  }
+                  onEdit={onEditNote}
+                  onDelete={onDeleteNote}
+                  onToggleScope={onToggleScope}
+                />
+              ))}
+            </>
+          )}
+        </div>
+
+        {/* Auth footer — signed in user info */}
+        <div style={{
+          padding: "8px 12px",
+          borderTop: "1px solid #2a2a40",
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+        }}>
+          {auth.user?.avatarUrl ? (
+            <img
+              src={auth.user.avatarUrl}
+              alt=""
+              style={{ width: "20px", height: "20px", borderRadius: "50%", flexShrink: 0 }}
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <div style={{
+              width: "20px", height: "20px", borderRadius: "50%", flexShrink: 0,
+              backgroundColor: "#2a2a40", color: "#00d4ff", fontSize: "10px", fontWeight: "bold",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              {auth.user?.name?.[0]?.toUpperCase() ?? "?"}
+            </div>
+          )}
+          <span style={{ fontSize: "11px", color: "#94a3b8", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+            {auth.user?.name}
+          </span>
+          <button
+            onClick={auth.signOut}
+            style={{ background: "none", border: "none", cursor: "pointer", fontSize: "10px", color: "#64748b", padding: "2px 4px" }}
+          >
+            Sign out
+          </button>
+        </div>
+        </>
+      )}
+      </div>{/* end inner content wrapper */}
     </div>
+    {scheduleModalOpen && (
+      <ScheduleModal
+        onSave={handleScheduleAlertSave}
+        onCancel={() => setScheduleModalOpen(false)}
+      />
+    )}
+    </>
   );
 }
 

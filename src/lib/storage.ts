@@ -4,6 +4,7 @@ const PAGE_PREFIX = "notara_page_";
 const SITE_PREFIX = "notara_site_";
 const ALERT_PAGE_PREFIX = "notara_alert_page_";
 const ALERT_SITE_PREFIX = "notara_alert_site_";
+const ALERT_GLOBAL_PREFIX = "notara_alert_global_";
 
 // Legacy prefixes for migration from webNoter
 const LEGACY_PREFIXES = [
@@ -162,6 +163,9 @@ export async function getNoteCountForUrl(url: string): Promise<number> {
 // --- Alert storage ---
 
 function alertStorageKey(alert: Pick<Alert, "scope" | "url">): string {
+  if (alert.scope === "global") {
+    return `${ALERT_GLOBAL_PREFIX}${alert.url || "all"}`;
+  }
   const id = alert.scope === "site" ? getHostname(alert.url) : alert.url;
   return alert.scope === "site"
     ? `${ALERT_SITE_PREFIX}${id}`
@@ -215,4 +219,49 @@ export async function updateAlert(
   if (index < 0) return;
   alerts[index] = { ...alerts[index], ...updates, updatedAt: Date.now() };
   await chrome.storage.sync.set({ [key]: alerts });
+}
+
+/** Get all alerts across all storage keys, grouped by identifier. */
+export async function getAllAlerts(): Promise<Record<string, Alert[]>> {
+  const all = await chrome.storage.sync.get(null);
+  const result: Record<string, Alert[]> = {};
+  for (const [key, value] of Object.entries(all)) {
+    if (key.startsWith(ALERT_PAGE_PREFIX)) {
+      const url = key.slice(ALERT_PAGE_PREFIX.length);
+      result[url] = [...(result[url] ?? []), ...(value as Alert[])];
+    } else if (key.startsWith(ALERT_SITE_PREFIX)) {
+      const hostname = key.slice(ALERT_SITE_PREFIX.length);
+      result[hostname] = [...(result[hostname] ?? []), ...(value as Alert[])];
+    } else if (key.startsWith(ALERT_GLOBAL_PREFIX)) {
+      const id = key.slice(ALERT_GLOBAL_PREFIX.length);
+      const domain = id === "all" ? "Global" : id;
+      result[domain] = [...(result[domain] ?? []), ...(value as Alert[])];
+    }
+  }
+  return result;
+}
+
+/** Save a global alert (stored individually by ID). */
+export async function saveGlobalAlert(alert: Alert): Promise<void> {
+  const key = `${ALERT_GLOBAL_PREFIX}all`;
+  const alerts = await getAlertsForKey(key);
+  const existing = alerts.findIndex((a) => a.id === alert.id);
+  if (existing >= 0) {
+    alerts[existing] = alert;
+  } else {
+    alerts.push(alert);
+  }
+  await chrome.storage.sync.set({ [key]: alerts });
+}
+
+/** Delete a global alert by ID. */
+export async function deleteGlobalAlert(alertId: string): Promise<void> {
+  const key = `${ALERT_GLOBAL_PREFIX}all`;
+  const alerts = await getAlertsForKey(key);
+  const filtered = alerts.filter((a) => a.id !== alertId);
+  if (filtered.length === 0) {
+    await chrome.storage.sync.remove(key);
+  } else {
+    await chrome.storage.sync.set({ [key]: filtered });
+  }
 }
