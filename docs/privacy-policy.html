@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — Notara</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #1a1a2e;
+      color: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.7;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      color: #00d4ff;
+      font-size: 2rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .effective-date {
+      color: #888;
+      margin-bottom: 1.5rem;
+    }
+
+    .intro {
+      margin-bottom: 2rem;
+    }
+
+    h2 {
+      color: #00d4ff;
+      font-size: 1.35rem;
+      margin-top: 2.5rem;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.3rem;
+      border-bottom: 1px solid #2a2a4a;
+    }
+
+    h3 {
+      color: #c0c0c0;
+      font-size: 1.1rem;
+      margin-top: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    p { margin-bottom: 0.75rem; }
+
+    strong { color: #fff; }
+
+    code {
+      background: #2a2a4a;
+      color: #00d4ff;
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+
+    a {
+      color: #00d4ff;
+      text-decoration: none;
+    }
+    a:hover { text-decoration: underline; }
+
+    ul, ol {
+      margin-left: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    li { margin-bottom: 0.35rem; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid #2a2a4a;
+    }
+
+    th {
+      background: #2a2a4a;
+      color: #00d4ff;
+      font-weight: 600;
+    }
+
+    td { background: #1e1e36; }
+
+    .contact {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid #2a2a4a;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Privacy Policy — Notara</h1>
+    <p class="effective-date"><strong>Effective date:</strong> February 21, 2026</p>
+
+    <p class="intro">Notara is a Chrome extension that lets you create floating sticky notes on any website. This policy explains what data the extension accesses and how it is handled.</p>
+
+    <h2>Data We Collect</h2>
+
+    <h3>Notes &amp; Screenshots</h3>
+    <p>All notes you create (text, color, position, scope) and any screenshots you capture are stored <strong>locally</strong> on your device using Chrome's built-in storage API (<code>chrome.storage.sync</code>). This data never leaves your browser unless Chrome's built-in sync is enabled in your browser settings, in which case Chrome itself may sync it across your signed-in devices.</p>
+
+    <h3>Google Account Information</h3>
+    <p>When you sign in with Google, we receive your name, email address, and profile picture from Google OAuth. This information is used solely to display your profile inside the extension and to authenticate your session.</p>
+
+    <h3>Authentication Tokens</h3>
+    <p>Session and refresh tokens are stored locally via <code>chrome.storage.local</code> and <code>chrome.storage.session</code>. They are used only to maintain your signed-in state.</p>
+
+    <h2>Chrome Permissions</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Permission</th>
+          <th>Why we need it</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><code>storage</code></td><td>Save your sticky notes locally</td></tr>
+        <tr><td><code>activeTab</code></td><td>Create notes on the page you're viewing</td></tr>
+        <tr><td><code>contextMenus</code></td><td>Provide a right-click "Add note" menu</td></tr>
+        <tr><td><code>alarms</code></td><td>Schedule alert reminders for notes</td></tr>
+        <tr><td><code>notifications</code></td><td>Display alert reminders as browser notifications</td></tr>
+        <tr><td><code>identity</code></td><td>Enable Google sign-in via Chrome</td></tr>
+        <tr><td><code>&lt;all_urls&gt;</code> (host permission)</td><td>Display your notes on any website you visit</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Third-Party Services</h2>
+
+    <ul>
+      <li><strong>Supabase</strong> — Handles authentication only. Your email and profile info are stored in Supabase's auth system to manage sign-in sessions. Supabase's privacy policy: <a href="https://supabase.com/privacy" target="_blank" rel="noopener">supabase.com/privacy</a></li>
+      <li><strong>Google OAuth</strong> — Used for sign-in. Google's privacy policy: <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">policies.google.com/privacy</a></li>
+    </ul>
+
+    <p>No other third-party services receive your data.</p>
+
+    <h2>What We Do NOT Do</h2>
+
+    <ul>
+      <li>We do <strong>not</strong> sell, share, or transfer your data to third parties.</li>
+      <li>We do <strong>not</strong> use your data for advertising, analytics, or tracking.</li>
+      <li>We do <strong>not</strong> collect browsing history or monitor your activity.</li>
+    </ul>
+
+    <h2>Data Storage &amp; Security</h2>
+
+    <p>All note data is stored locally in your browser using <code>chrome.storage</code>. Authentication tokens are stored locally in <code>chrome.storage.local</code> and <code>chrome.storage.session</code>. No note content is transmitted to any server.</p>
+
+    <h2>Deleting Your Data</h2>
+
+    <ol>
+      <li><strong>Notes:</strong> Remove individual notes from the extension panel, or uninstall the extension to delete all note data.</li>
+      <li><strong>Account:</strong> Sign out from the extension panel to clear your local session. Uninstalling the extension removes all locally stored data.</li>
+      <li><strong>Supabase account:</strong> To request deletion of your auth record, contact us at the email below.</li>
+    </ol>
+
+    <h2>Changes to This Policy</h2>
+
+    <p>If we update this policy, we will revise the effective date above. Continued use of the extension after changes constitutes acceptance.</p>
+
+    <div class="contact">
+      <h2>Contact</h2>
+      <p>For questions or data deletion requests, email: <strong><a href="mailto:idanyativ@gmail.com">idanyativ@gmail.com</a></strong></p>
+    </div>
+  </div>
+</body>
+</html>
