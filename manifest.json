@@ -12,7 +12,8 @@
     "default_icon": {
       "16": "public/icon-16.png",
       "48": "public/icon-48.png"
-    }
+    },
+    "default_popup": "src/popup/popup.html"
   },
   "background": {
     "service_worker": "src/background/background.ts",
@@ -24,6 +25,6 @@
       "js": ["src/content/content.tsx"]
     }
   ],
-  "permissions": ["storage", "activeTab", "contextMenus"],
+  "permissions": ["storage", "activeTab", "contextMenus", "alarms", "notifications", "identity"],
   "host_permissions": ["<all_urls>"]
 }

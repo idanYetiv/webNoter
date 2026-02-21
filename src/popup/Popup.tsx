@@ -3,37 +3,15 @@ import type { Note } from "../lib/types";
 import { getAllNotes, deleteNote } from "../lib/storage";
 import { NOTE_COLORS } from "../lib/types";
 import { canCreateNote, FREE_NOTE_LIMIT } from "../lib/freemium";
-
-interface SiteGroup {
-  domain: string;
-  notes: Note[];
-}
-
-function groupByDomain(allNotes: Record<string, Note[]>): SiteGroup[] {
-  const domainMap = new Map<string, Note[]>();
-
-  for (const notes of Object.values(allNotes)) {
-    for (const note of notes) {
-      let domain: string;
-      try {
-        domain = new URL(note.url).hostname;
-      } catch {
-        domain = note.url;
-      }
-      if (!domainMap.has(domain)) domainMap.set(domain, []);
-      domainMap.get(domain)!.push(note);
-    }
-  }
-
-  return Array.from(domainMap.entries())
-    .map(([domain, notes]) => ({ domain, notes }))
-    .sort((a, b) => b.notes.length - a.notes.length);
-}
+import { groupByDomain } from "../lib/grouping";
+import { useAuth } from "../hooks/useAuth";
+import AuthSection from "./components/AuthSection";
 
 export default function Popup() {
-  const [groups, setGroups] = useState<SiteGroup[]>([]);
+  const [groups, setGroups] = useState<{ domain: string; items: Note[] }[]>([]);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [atLimit, setAtLimit] = useState(false);
+  const auth = useAuth();
 
   useEffect(() => {
     loadNotes();
@@ -70,7 +48,17 @@ export default function Popup() {
     }
   }
 
-  const totalNotes = groups.reduce((sum, g) => sum + g.notes.length, 0);
+  async function handleTogglePanel() {
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    if (tab?.id) {
+      chrome.tabs.sendMessage(tab.id, { type: "TOGGLE_PANEL" });
+    }
+  }
+
+  const totalNotes = groups.reduce((sum, g) => sum + g.items.length, 0);
 
   return (
     <div className="flex flex-col h-full text-[#e2e8f0]" style={{ backgroundColor: "#0a0a14" }}>
@@ -85,16 +73,27 @@ export default function Popup() {
         <p className="text-xs mt-1" style={{ color: "#64748b" }}>Sticky notes on any website</p>
       </div>
 
-      {/* Add note button */}
-      <div className="p-3">
+      {/* Auth section */}
+      <AuthSection {...auth} />
+
+      {/* Action buttons */}
+      <div className="p-3 flex gap-2">
         <button
           onClick={handleAddNote}
           disabled={atLimit}
-          className="w-full py-2 px-4 rounded-lg font-medium text-sm transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
           style={{ backgroundColor: "#1a1a2e", color: atLimit ? "#64748b" : "#00d4ff", border: "1px solid #2a2a40" }}
           title={atLimit ? `Note limit reached (${FREE_NOTE_LIMIT})` : undefined}
         >
-          {atLimit ? `Limit reached (${FREE_NOTE_LIMIT} notes)` : "+ Add Note to Current Page"}
+          {atLimit ? `Limit (${FREE_NOTE_LIMIT})` : "+ Add Note"}
+        </button>
+        <button
+          onClick={handleTogglePanel}
+          className="py-2 px-4 rounded-lg font-medium text-sm transition-colors cursor-pointer"
+          style={{ backgroundColor: "#1a1a2e", color: "#94a3b8", border: "1px solid #2a2a40" }}
+          title="Toggle Notes on Page"
+        >
+          Toggle Notes
         </button>
       </div>
 
@@ -122,13 +121,13 @@ export default function Popup() {
                   </span>
                 </div>
                 <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: "rgba(0,212,255,0.15)", color: "#00d4ff" }}>
-                  {group.notes.length}
+                  {group.items.length}
                 </span>
               </button>
 
               {expanded.has(group.domain) && (
                 <div className="ml-4 mt-1 space-y-1">
-                  {group.notes.map((note) => (
+                  {group.items.map((note) => (
                     <div
                       key={note.id}
                       className="flex items-center gap-2 p-2 rounded text-xs"
